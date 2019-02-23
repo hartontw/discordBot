@@ -1,0 +1,28 @@
+{
+    "name": "discordbot",
+    "version": "0.0.1",
+    "description": "A Discord bot.",
+    "main": "src/index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/hartontw/discordBot.git"
+    },
+    "keywords": [
+        "discord"
+    ],
+    "author": "Daniel Martínez Priego",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/hartontw/discordBot/issues"
+    },
+    "homepage": "https://github.com/hartontw/discordBot#readme",
+    "dependencies": {
+        "discord.js": "^11.4.2",
+        "mathjax-node": "^2.1.1",
+        "mathjax-node-svg2png": "^2.0.0",
+        "minimist": "^1.2.0"
+    }
+}
