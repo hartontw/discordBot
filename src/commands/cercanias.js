@@ -111,7 +111,12 @@ class Cercanias extends Command {
     }
 
     static getZone(raw) {
-        return ZONES.find(z => z.name.toLowerCase() === raw.toLowerCase());
+        raw = raw.toLowerCase();
+        if (raw === 'alicante' || raw === 'múrcia') {
+            raw = 'múrcia/alicante';
+        }
+
+        return ZONES.find(z => z.name.toLowerCase() === raw);
     }
 
     get wrongFormat() {
@@ -267,14 +272,37 @@ class Cercanias extends Command {
 
         let start = this.args.inicio || 0;
 
+        const addDays = (date, days) => new Date(date.getTime() + days * 60 * 60 * 24 * 1000);
+
+        let now = new Date();
         let date = this.args.fecha;
         if (!date) {
-            const now = new Date();
             date = `${now.getFullYear()}${addZero(now.getMonth())}${addZero(now.getDate())}`;
 
             const hour = now.getHours();
             if (start < hour)
                 start = hour;
+
+        } else if (isNaN(date)) {
+
+            if (date === 'mañana') {
+                now = addDays(now, 1);
+
+            } else {
+                const weekDays = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+                const index = weekDays.indexOf(date.toLowerCase().replace('é', 'e').replace('á', 'a'));
+                if (index < 0)
+                    return await this.send(`${date} no es un día de la semana válido.`);
+
+                const today = now.getDay();
+                if (today > index)
+                    now = addDays(now, 7 + index - today);
+                else
+                    now = addDays(now, index - today);
+            }
+
+            date = `${now.getFullYear()}${addZero(now.getMonth())}${addZero(now.getDate())}`;
         }
 
         let end = this.args.fin && this.args.fin > start ? this.args.fin : 26;
@@ -283,21 +311,28 @@ class Cercanias extends Command {
 
         const schedules = await this.constructor.getSchedules(url);
 
-        const tab = 8;
-        const format = (text, first) => {
-            for (let i = 0; i < tab - text.length; i++)
-                text = (first ? "" : " ") + text + " ";
+        const format = (text, tab) => {
+            tab -= text.length;
+
+            const pre = Math.floor(tab / 2);
+            for (let i = 0; i < pre; i++)
+                text = " " + text;
+
+            const post = Math.ceil(tab / 2);
+            for (let i = 0; i < post; i++)
+                text += " ";
 
             return text;
         }
 
         let overflow = false;
-        let description = '```fix\n' + `${format('Línea', true)}|${format('Salida')}|${format('Llegada')}|${format('Duración')} ` + '```\n';
+        let description = '-----------------------------------------------------------------\n';
+        description += '```fix\n' + ` Línea | Salida | Llegada | Duración ` + '```\n';
         for (let i = 0; i < schedules.length; i++) {
-            const line = format(schedules[i].line, true);
-            const start = format(schedules[i].start);
-            const arrive = format(schedules[i].arrive);
-            const time = format(schedules[i].time);
+            const line = format(schedules[i].line, 7);
+            const start = format(schedules[i].start, 8);
+            const arrive = format(schedules[i].arrive, 9);
+            const time = format(schedules[i].time, 10);
             const color = i % 2 === 0 ? '```\n' : '```yaml\n';
             const add = `${color}${line}|${start}|${arrive}|${time}` + '```\n';
 
@@ -308,7 +343,7 @@ class Cercanias extends Command {
 
                 if (!overflow) {
                     embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
-                    embed.setTitle(`**__${origin.name} --> ${destination.name}__**`);
+                    embed.setTitle(`**${origin.name} --> ${destination.name}** (${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()})`);
                     embed.setURL(url);
                     overflow = true;
                 }
@@ -325,7 +360,7 @@ class Cercanias extends Command {
 
         if (!overflow) {
             embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
-            embed.setTitle(`**__${origin.name} --> ${destination.name}__**`);
+            embed.setTitle(`**${origin.name} --> ${destination.name}** (${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()})`);
             embed.setURL(url);
         }
 
