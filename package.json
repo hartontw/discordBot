@@ -20,6 +20,7 @@
     },
     "homepage": "https://github.com/hartontw/discordBot#readme",
     "dependencies": {
+        "cheerio": "^1.0.0-rc.2",
         "discord.js": "^11.4.2",
         "mathjax-node": "^2.1.1",
         "mathjax-node-svg2png": "^2.0.0",

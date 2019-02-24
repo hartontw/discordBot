@@ -76,16 +76,44 @@ class Command {
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
 
-            if (key === '_')
-                continue;
+            if (key !== '_') {
 
-            if (Array.isArray(args[key]))
-                args[key] = args[key][args[key].length - 1];
+                if (Array.isArray(args[key]))
+                    args[key] = args[key][args[key].length - 1];
 
-            const found = this.constructor.argsInfo.find(a => a.alias === key);
-            if (found && !args[found.name])
-                args[found.name] = args[key];
+                const found = this.constructor.argsInfo.find(a => a.alias === key);
+                if (found && !args[found.name])
+                    args[found.name] = args[key];
+
+            }
         }
+
+        const sp = [];
+
+        for (let i = 0; i < args._.length; i++) {
+
+            let text = args._[i];
+            const first = args._[i][0];
+            if (first === '"' || first === "'") {
+                for (let j = i; j < args._.length; j++) {
+
+                    const last = args._[j][args._[j].length - 1];
+                    if (last === first) {
+                        if (i === j)
+                            text = args._[j].substring(0, args._[j].length - 1);
+                        else
+                            text += " " + args._[j].substring(0, args._[j].length - 1);
+
+                        i = j;
+                        break;
+
+                    } else if (i !== j) text += " " + args._[j];
+                }
+                sp.push(text.substring(1));
+            } else sp.push(text);
+        }
+
+        args._ = sp;
 
         args.remains = args.remains || message.channel.constructor.name === 'DMChannel'
 

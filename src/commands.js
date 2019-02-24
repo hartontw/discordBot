@@ -4,6 +4,7 @@ const Latex = require('./commands/latex');
 const Pastebin = require('./commands/pastebin');
 const Gist = require('./commands/gist');
 const Dice = require('./commands/dice');
+const Cercanias = require('./commands/cercanias');
 
 const CMD_REGEX = /^([/])\w+\s*/;
 
@@ -13,7 +14,7 @@ async function help(message) {
     const keys = Object.keys(commands);
     for (let i = 0; i < keys.length; i++) {
         fields.push({
-            name: keys[i],
+            name: '/' + keys[i],
             value: commands[keys[i]].description
         });
     }
@@ -32,6 +33,7 @@ const commands = {
     pastebin: Pastebin,
     gist: Gist,
     dice: Dice,
+    cercanias: Cercanias,
 }
 
 async function procces(message) {
