@@ -9,15 +9,15 @@ mjAPI.config({
 mjAPI.start();
 
 class Latex extends Command {
-    get description() {
+    static get description() {
         return "Format a LaTeX formula into an image.";
     }
 
-    get usage() {
+    static get usage() {
         return "/latex e=mc^2 --color white --scale 2";
     }
 
-    get argsInfo() {
+    static get argsInfo() {
         return [{
                 name: 'color',
                 alias: 'c',
@@ -27,15 +27,11 @@ class Latex extends Command {
                 name: 'scale',
                 alias: 's',
                 description: 'Sets the size of the image.'
-            },
-            {
-                name: 'dm',
-                description: "Sends the image through a DM message"
             }
-        ].concat(super.argsInfo);
+        ].concat(Command.argsInfo);
     }
 
-    async getBuffer(formula, color = 'white', scale = 2) {
+    static async getBuffer(formula, color = 'white', scale = 2) {
         const data = await mjAPI.typeset({
             math: `{\\color{${color}}{${formula}}}`,
             format: "TeX",
@@ -47,9 +43,9 @@ class Latex extends Command {
     }
 
     async run() {
-        const buffer = await this.getBuffer(this.args._, this.args.color, this.args.scale);
+        const buffer = await this.constructor.getBuffer(this.args._, this.args.color, this.args.scale);
         const attachment = new Attachment(buffer);
-        return this.args.dm ? await this.message.author.send(attachment) : await this.message.reply(attachment);
+        return await this.send(attachment);
     }
 }
 

@@ -1,4 +1,4 @@
-require('./token');
+require('./keys');
 
 const commands = require('./commands');
 const { Client } = require('discord.js')
@@ -14,4 +14,4 @@ client.on('message', async message => {
         console.log("COMANDO!");
 });
 
-client.login(process.env.TOKEN);
+client.login(process.env.DISCORD_TOKEN);

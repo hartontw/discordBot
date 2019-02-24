@@ -1,57 +1,72 @@
-const { RichEmbed } = require('discord.js');
-
 class Command {
-    get description() {
+    static get description() {
         return "Discord custom command";
     }
 
-    get usage() {
-        return `/command --help\n
-                /command <content> --remain\n
+    static get usage() {
+        return `/command --help
+                /command <content> --remains
                 /command <content> <arguments>`;
     }
 
-    get argsInfo() {
+    static get argsInfo() {
         return [{
                 name: 'help',
                 alias: 'h',
                 description: 'Command documentation.'
             },
             {
-                name: 'remain',
+                name: 'remains',
                 alias: 'r',
-                description: 'The command invoke text remains in chat.'
+                description: 'The command text remains in chat.'
+            },
+            {
+                name: 'dm',
+                description: "Sends the response through a DM message"
             }
         ];
     }
 
-    get help() {
-        let commands = '';
+    async help() {
+        const argsInfo = this.constructor.argsInfo;
 
-        for (let i = 0; i < this.argsInfo.length; i++) {
-            const name = this.argsInfo[i].name;
-            const alias = this.argsInfo[i].alias ? ` [${this.argsInfo[i].alias}]` : '';
-            const description = this.argsInfo[i].description;
+        let args = '';
 
-            commands += `${name}${alias}: ${description}\n`;
+        for (let i = 0; i < argsInfo.length; i++) {
+            const name = argsInfo[i].name;
+            const alias = argsInfo[i].alias ? ` [${argsInfo[i].alias}]` : '';
+            const description = argsInfo[i].description;
+
+            args += `${name}${alias}: ${description}\n`;
         }
 
-        return {
+        const reply = {
             embed: {
                 color: 3447003,
-                title: this.args._[0],
-                description: this.description,
+                title: this.constructor.name,
+                description: this.constructor.description,
                 fields: [{
                         name: 'Usage',
-                        value: this.usage
+                        value: this.constructor.usage
                     },
                     {
-                        name: 'Commands',
-                        value: commands
+                        name: 'Arguments',
+                        value: args
                     }
                 ]
             }
         };
+
+        const help = await this.message.author.send(reply);
+
+        if (!this.args.remains)
+            await this.message.delete();
+
+        return help;
+    }
+
+    get wrongFormat() {
+        return this.args._.length < 1;
     }
 
     constructor(message, args) {
@@ -67,30 +82,35 @@ class Command {
             if (Array.isArray(args[key]))
                 args[key] = args[key][args[key].length - 1];
 
-            const found = this.argsInfo.find(a => a.alias === key);
+            const found = this.constructor.argsInfo.find(a => a.alias === key);
             if (found && !args[found.name])
                 args[found.name] = args[key];
         }
 
+        args.remains = args.remains || message.channel.constructor.name === 'DMChannel'
+
         this.args = args;
+    }
+
+    async send(content) {
+        if (this.args.dm)
+            return await this.message.author.send(content);
+        else if (this.args.remains)
+            return await this.message.channel.send(content);
+        else
+            return await this.message.reply(content);
     }
 
     async run() { return false; }
 
     async execute() {
 
-        if (this.args.help) {
-            const help = await this.message.author.send(this.help);
-
-            if (!this.args.remain)
-                await this.message.delete();
-
-            return help;
-        }
+        if (this.args.help || this.badFormat)
+            return await this.help();
 
         const run = await this.run();
 
-        if (!this.args.remain)
+        if (!this.args.remains)
             await this.message.delete();
 
         return run;
