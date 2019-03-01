@@ -57,12 +57,7 @@ class Command {
             }
         };
 
-        const help = await this.message.author.send(reply);
-
-        if (!this.args.remains)
-            await this.message.delete();
-
-        return help;
+        return this.send(reply);
     }
 
     get wrongFormat() {
@@ -115,7 +110,7 @@ class Command {
 
         args._ = sp;
 
-        args.remains = args.remains || message.channel.constructor.name === 'DMChannel'
+        args.remains = args.remains || message.channel.type === 'dm'
 
         this.args = args;
     }
@@ -132,16 +127,31 @@ class Command {
     async run() { return false; }
 
     async execute() {
+        const body = {
+            command: this.constructor.name,
+            args: this.args,
+            message: this.message,
+            replies: []
+        }
 
-        if (this.args.help || this.badFormat)
-            return await this.help();
+        try {
+            const reply = this.args.help || this.badFormat ? await this.help() : await this.run();
 
-        const run = await this.run();
+            if (Array.isArray(reply))
+                body.replies = reply;
+            else
+                body.replies.push(reply);
 
-        if (!this.args.remains)
-            await this.message.delete();
+            if (!this.args.remains)
+                body.replies.push(await this.message.delete());
 
-        return run;
+        } catch (error) {
+            body.error = error;
+
+        } finally {
+            return body;
+
+        }
     }
 }
 

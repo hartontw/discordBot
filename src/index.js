@@ -9,9 +9,10 @@ client.on('ready', () => {
 });
 
 client.on('message', async message => {
-    const validCommand = await commands(message);
-    if (validCommand)
-        console.log("COMANDO!");
+    const reply = await commands(message);
+    if (reply && reply.error) {
+        console.log(error.message);
+    }
 });
 
 client.login(process.env.DISCORD_TOKEN);

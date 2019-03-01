@@ -149,20 +149,24 @@ class Cercanias extends Command {
             const requestOptions = { encoding: "latin1", method: "GET", uri: `http://horarios.renfe.com/cer/hjcer300.jsp?CP=NO&I=s&NUCLEO=${zone}` };
             request(requestOptions, (err, res, body) => {
                 if (!err) {
-                    const $ = cheerio.load(body);
-                    const options = $('select[name=o]').find('option');
-                    const stations = [];
-                    options.each(function() {
-                        const opt = $(this);
-                        const val = opt.attr('value');
-                        if (val !== '?') {
-                            stations.push({
-                                'id': val,
-                                'name': opt.text().trim()
-                            });
-                        }
-                    });
-                    resolve(stations);
+                    try {
+                        const $ = cheerio.load(body);
+                        const options = $('select[name=o]').find('option');
+                        const stations = [];
+                        options.each(function() {
+                            const opt = $(this);
+                            const val = opt.attr('value');
+                            if (val !== '?') {
+                                stations.push({
+                                    'id': val,
+                                    'name': opt.text().trim()
+                                });
+                            }
+                        });
+                        resolve(stations);
+                    } catch (err) {
+                        reject(err);
+                    }
                 } else reject(err);
             });
         });
@@ -199,43 +203,47 @@ class Cercanias extends Command {
             };
             request(requestOptions, (err, res, body) => {
                 if (!err) {
-                    const toHour = renfeHour => renfeHour.replace(/^0/g, '').replace('.', ':');
+                    try {
+                        const toHour = renfeHour => renfeHour.replace(/^0/g, '').replace('.', ':');
 
-                    const toTime = renfeTime => {
-                        const groups = /(.*)\.(.*)/.exec(renfeTime),
-                            hours = Number(groups[1]),
-                            minutes = Number(groups[2]);
+                        const toTime = renfeTime => {
+                            const groups = /(.*)\.(.*)/.exec(renfeTime),
+                                hours = Number(groups[1]),
+                                minutes = Number(groups[2]);
 
-                        let time = '';
-                        if (hours) {
-                            time = hours + 'h ';
-                        }
-                        if (minutes) {
-                            time += minutes + 'm';
-                        }
-                        return time;
-                    };
+                            let time = '';
+                            if (hours) {
+                                time = hours + 'h ';
+                            }
+                            if (minutes) {
+                                time += minutes + 'm';
+                            }
+                            return time;
+                        };
 
-                    const $ = cheerio.load(body);
-                    const rows = $('table tr');
-                    const schedules = [];
-                    rows.each(function() {
-                        const cols = $(this).find('td:not(.cabe)'),
-                            line = $(cols[0]).text().trim(),
-                            start = $(cols[2]).text().trim(),
-                            arrive = $(cols[cols.length - 2]).text().trim(),
-                            time = $(cols[cols.length - 1]).text().trim();
+                        const $ = cheerio.load(body);
+                        const rows = $('table tr');
+                        const schedules = [];
+                        rows.each(function() {
+                            const cols = $(this).find('td:not(.cabe)'),
+                                line = $(cols[0]).text().trim(),
+                                start = $(cols[2]).text().trim(),
+                                arrive = $(cols[cols.length - 2]).text().trim(),
+                                time = $(cols[cols.length - 1]).text().trim();
 
-                        if (!isNaN(Number(start[0]))) {
-                            schedules.push({
-                                line,
-                                start: toHour(start),
-                                arrive: toHour(arrive),
-                                time: toTime(time)
-                            });
-                        }
-                    });
-                    resolve(schedules);
+                            if (!isNaN(Number(start[0]))) {
+                                schedules.push({
+                                    line,
+                                    start: toHour(start),
+                                    arrive: toHour(arrive),
+                                    time: toTime(time)
+                                });
+                            }
+                        });
+                        resolve(schedules);
+                    } catch (err) {
+                        reject(err);
+                    }
                 } else reject(err);
             });
         });
@@ -325,6 +333,8 @@ class Cercanias extends Command {
             return text;
         }
 
+        const replies = [];
+
         let overflow = false;
         let description = '-----------------------------------------------------------------\n';
         description += '```fix\n' + ` Línea | Salida | Llegada | Duración ` + '```\n';
@@ -348,7 +358,7 @@ class Cercanias extends Command {
                     overflow = true;
                 }
 
-                await this.send({ embed });
+                replies.push(await this.send({ embed }));
 
                 description = add;
             } else description += add;
@@ -364,7 +374,9 @@ class Cercanias extends Command {
             embed.setURL(url);
         }
 
-        return await this.send({ embed });
+        replies.push(await this.send({ embed }));
+
+        return replies;
     }
 }
 

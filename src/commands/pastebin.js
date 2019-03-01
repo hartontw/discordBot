@@ -1,5 +1,8 @@
-const Command = require('./command');
 const request = require('request');
+const highlight = require('highlight.js');
+
+const Command = require('./command');
+const { codeMessage } = require('../utils');
 
 const aliases = {
     'text': '',
@@ -13,21 +16,45 @@ class Pastebin extends Command {
     }
 
     static get usage() {
-        return "/pastebin gYmq6mH7";
+        return `/pastebin gYmq6mH7
+               /pastebin ymg6EDpY --language JavaScript
+               /pastebin ymg6EDpY -l js
+               /pastebin gYmq6mH7 --auto`;
+    }
+
+    static get argsInfo() {
+        return [{
+                name: 'language',
+                alias: 'l',
+                description: 'Set de language of the paste.',
+            },
+            {
+                name: 'auto',
+                alias: 'a',
+                description: 'Auto-Detect the language of the paste.'
+            }
+        ].concat(Command.argsInfo);
     }
 
     static getLanguage(code) {
         return new Promise((resolve, reject) => {
             request(`https://pastebin.com/${code}`, (err, res, body) => {
                 if (!err) {
-                    let language = body.match(/<span class=\"h_640\"><a[^>]*?class=\"buttonsm\"[^>]*?>(.*?)<\/a><\/span>/)[1];
+                    try {
+                        const match = body.match(/<span class=\"h_640\"><a[^>]*?class=\"buttonsm\"[^>]*?>(.*?)<\/a><\/span>/);
+                        if (match) {
+                            let language = match[1];
 
-                    const split = language.split(' ');
-                    if (split)
-                        language = split[0];
+                            const split = language.split(' ');
+                            if (split)
+                                language = split[0];
 
-                    const alias = aliases[language];
-                    resolve(alias ? alias : language.toLowerCase());
+                            const alias = aliases[language];
+                            resolve(alias ? alias : language.toLowerCase());
+                        } else reject(new Error('Invalid code.'));
+                    } catch (err) {
+                        reject(err);
+                    }
                 } else reject(err);
             });
         });
@@ -50,37 +77,18 @@ class Pastebin extends Command {
 
     async run() {
         const code = this.args._[0];
-        const language = await this.constructor.getLanguage(code);
+
         const content = await this.constructor.getContent(code);
+        const language = this.args.language ? this.args.language : (this.args.auto ? highlight.highlightAuto(content).language : await this.constructor.getLanguage(code));
 
-        const userLength = this.message.author.username.length + 3; //@username,\n
-        let maxLength = 2000 - userLength - language.length - 7; //6` + 1\n
+        const messages = [];
 
-        let first = true;
-        let block = 0;
-        let i = 0;
-        while (i < content.length - maxLength) {
-
-            block = content.substring(i, i + maxLength);
-
-            let l = block.lastIndexOf('\n');
-            if (i >= 0) {
-                block = content.substring(i, i + l);
-                i += l;
-            } else i += maxLength;
-
-            const text = '```' + language + '\n' + block + '```';
-            await this.send(text, first);
-
-            if (first) {
-                maxLength = 2000 - language.length - 7;
-                first = false;
-            }
+        const blocks = codeMessage(content, language, this.message.author.username);
+        for (const block of blocks) {
+            messages.push(await this.send(block, messages.length === 0));
         }
 
-        block = content.substring(i, i + maxLength);
-        const text = '```' + language + '\n' + block + '```';
-        return await this.send(text, first);
+        return messages;
     }
 }
 
