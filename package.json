@@ -22,8 +22,10 @@
     "dependencies": {
         "cheerio": "^1.0.0-rc.2",
         "discord.js": "^11.4.2",
+        "highlight.js": "^9.15.6",
         "mathjax-node": "^2.1.1",
         "mathjax-node-svg2png": "^2.0.0",
-        "minimist": "^1.2.0"
+        "minimist": "^1.2.0",
+        "xml-js": "^1.6.11"
     }
 }
