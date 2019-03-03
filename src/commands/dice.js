@@ -8,6 +8,15 @@ const githubName = package.name;
 
 const url = `https://raw.githubusercontent.com/${githubUser}/${githubName}/master/src/assets/dice/d`;
 
+const colors = {
+    d4: 0x6ba449,
+    d6: 0x3767a8,
+    d8: 0x8f9b5e,
+    d10: 0x3c6b84,
+    d12: 0x70915c,
+    d20: 0x3e319a,
+}
+
 class Dice extends Command {
     static get description() {
         return "Rolls a dice.";
@@ -17,6 +26,15 @@ class Dice extends Command {
         return `/dice 6
                 /dice 6 12 4
                 /dice 2d20 3d12 1d6`;
+    }
+
+    async send(content, first) {
+        if (this.args.dm)
+            return await this.message.author.send(content);
+        else if (this.args.remains || !first)
+            return await this.message.channel.send(content);
+        else
+            return await this.message.reply(content);
     }
 
     async run() {
@@ -38,13 +56,19 @@ class Dice extends Command {
 
             for (let j = 0; j < amount; j++) {
                 const value = Math.floor(Math.random() * type) + 1;
-                const imageUrl = url + type + '/' + value + '.png';
 
-                const embed = new RichEmbed()
-                    .setColor(0x00AE86)
-                    .setThumbnail(imageUrl);
+                const embed = new RichEmbed();
 
-                response.push(await this.send(embed));
+                const color = colors[`d${type}`];
+                if (color) {
+                    embed.setColor(color);
+                    embed.setThumbnail(url + type + '/' + value + '.png');
+                } else {
+                    embed.setTitle(`d${type}: ${value}`);
+                    embed.setColor(0x333333);
+                }
+
+                response.push(await this.send(embed, i === 0 && j === 0));
             }
         }
 
