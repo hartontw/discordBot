@@ -66,29 +66,25 @@ class Pastebin extends Command {
         });
     }
 
-    async send(content, first) {
-        if (this.args.dm)
-            return await this.message.author.send(content);
-        else if (this.args.remains || !first)
-            return await this.message.channel.send(content);
-        else
-            return await this.message.reply(content);
-    }
-
     async run() {
-        const code = this.args._[0];
+        try {
+            const code = this.args._[0];
 
-        const content = await this.constructor.getContent(code);
-        const language = this.args.language ? this.args.language : (this.args.auto ? highlight.highlightAuto(content).language : await this.constructor.getLanguage(code));
+            const content = await this.constructor.getContent(code);
+            const language = this.args.language ? this.args.language : (this.args.auto ? highlight.highlightAuto(content).language : await this.constructor.getLanguage(code));
 
-        const messages = [];
+            const messages = [];
 
-        const blocks = codeMessage(content, language, this.message.author.username);
-        for (const block of blocks) {
-            messages.push(await this.send(block, messages.length === 0));
+            const blocks = codeMessage(content, language, this.message.author.username);
+            for (const block of blocks) {
+                messages.push(await this.send(block, messages.length === 0));
+            }
+
+            return messages;
+
+        } catch (error) {
+            return this.error(error);
         }
-
-        return messages;
     }
 }
 

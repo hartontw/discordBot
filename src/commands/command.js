@@ -28,36 +28,41 @@ class Command {
     }
 
     async help() {
-        const argsInfo = this.constructor.argsInfo;
+        try {
+            const argsInfo = this.constructor.argsInfo;
 
-        let args = '';
+            let args = '';
 
-        for (let i = 0; i < argsInfo.length; i++) {
-            const name = argsInfo[i].name;
-            const alias = argsInfo[i].alias ? ` [${argsInfo[i].alias}]` : '';
-            const description = argsInfo[i].description;
+            for (let i = 0; i < argsInfo.length; i++) {
+                const name = argsInfo[i].name;
+                const alias = argsInfo[i].alias ? ` [${argsInfo[i].alias}]` : '';
+                const description = argsInfo[i].description;
 
-            args += `${name}${alias}: ${description}\n`;
-        }
-
-        const reply = {
-            embed: {
-                color: 3447003,
-                title: this.constructor.name,
-                description: this.constructor.description,
-                fields: [{
-                        name: 'Usage',
-                        value: this.constructor.usage
-                    },
-                    {
-                        name: 'Arguments',
-                        value: args
-                    }
-                ]
+                args += `${name}${alias}: ${description}\n`;
             }
-        };
 
-        return this.send(reply);
+            const reply = {
+                embed: {
+                    color: 3447003,
+                    title: this.constructor.name,
+                    description: this.constructor.description,
+                    fields: [{
+                            name: 'Usage',
+                            value: this.constructor.usage
+                        },
+                        {
+                            name: 'Arguments',
+                            value: args
+                        }
+                    ]
+                }
+            };
+
+            return this.send(reply);
+
+        } catch (error) {
+            return this.error(error);
+        }
     }
 
     get wrongFormat() {
@@ -113,44 +118,55 @@ class Command {
         args.remains = args.remains || message.channel.type === 'dm'
 
         this.args = args;
+
+        this.body = {
+            command: this.constructor.name,
+            args: this.args,
+            message: this.message,
+            replies: [],
+            errors: [],
+            hasErrors: function() { return this.errors.length > 0; }
+        }
     }
 
-    async send(content) {
-        if (this.args.dm)
-            return await this.message.author.send(content);
-        else if (this.args.remains)
-            return await this.message.channel.send(content);
-        else
-            return await this.message.reply(content);
+    async send(content, first = true) {
+        try {
+            if (this.args.dm)
+                return await this.message.author.send(content);
+            else if (this.args.remains || !first)
+                return await this.message.channel.send(content);
+            else
+                return await this.message.reply(content);
+        } catch (error) {
+            return this.error(error);
+        }
+    }
+
+    error(e) {
+        this.body.errors.push(e);
+        return null;
     }
 
     async run() { return false; }
 
     async execute() {
-        const body = {
-            command: this.constructor.name,
-            args: this.args,
-            message: this.message,
-            replies: []
-        }
-
         try {
-            const reply = this.args.help || this.badFormat ? await this.help() : await this.run();
+            const reply = this.args.help || this.wrongFormat ? await this.help() : await this.run();
 
-            if (Array.isArray(reply))
-                body.replies = reply;
-            else
-                body.replies.push(reply);
+            if (reply != null) {
+                if (Array.isArray(reply))
+                    this.body.replies = reply;
+                else
+                    this.body.replies.push(reply);
+            }
 
             if (!this.args.remains)
-                body.replies.push(await this.message.delete());
+                this.body.replies.push(await this.message.delete());
 
         } catch (error) {
-            body.error = error;
-
+            this.body.errors.push(error);
         } finally {
-            return body;
-
+            return this.body;
         }
     }
 }

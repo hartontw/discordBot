@@ -1,6 +1,6 @@
 //const { RichEmbed } = require('discord.js');
 
-function codeMessage(content, language, userName, maxLength = 2000) {
+function codeMessage(content, language, userName, maxLength = 1997) { //2000! 1997?
 
     const userLength = userName.length + 3; //@username,\n
 

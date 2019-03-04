@@ -28,15 +28,6 @@ class Dice extends Command {
                 /dice 2d20 3d12 1d6`;
     }
 
-    async send(content, first) {
-        if (this.args.dm)
-            return await this.message.author.send(content);
-        else if (this.args.remains || !first)
-            return await this.message.channel.send(content);
-        else
-            return await this.message.reply(content);
-    }
-
     async run() {
         const dices = this.args._;
 

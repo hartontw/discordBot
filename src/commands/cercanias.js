@@ -124,24 +124,28 @@ class Cercanias extends Command {
     }
 
     async sendZones() {
-        let description = '';
-        for (let i = 0; i < ZONES.length; i++)
-            description += `- [${ZONES[i].name}](${ZONES[i].url})\n`;
+        try {
+            let description = '';
+            for (let i = 0; i < ZONES.length; i++)
+                description += `- [${ZONES[i].name}](${ZONES[i].url})\n`;
 
-        const reply = {
-            embed: {
-                color: 3447003,
-                author: {
-                    name: 'Renfe Cercanias',
-                    icon_url: 'https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg'
-                },
-                title: "**__Zonas:__**",
-                url: 'http://www.renfe.com/viajeros/cercanias/index.html',
-                description
+            const reply = {
+                embed: {
+                    color: 3447003,
+                    author: {
+                        name: 'Renfe Cercanias',
+                        icon_url: 'https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg'
+                    },
+                    title: "**__Zonas:__**",
+                    url: 'http://www.renfe.com/viajeros/cercanias/index.html',
+                    description
+                }
             }
-        }
 
-        return await this.send(reply);
+            return await this.send(reply);
+        } catch (error) {
+            return this.error(error);
+        }
     }
 
     static getStations(zone) {
@@ -173,25 +177,29 @@ class Cercanias extends Command {
     }
 
     async sendStations() {
-        const zone = this.constructor.getZone(this.args._[0]);
-        if (!zone)
-            return await this.send(`${this.args._[0]} no es una zona válida.`);
+        try {
+            const zone = this.constructor.getZone(this.args._[0]);
+            if (!zone)
+                return await this.send(`${this.args._[0]} no es una zona válida.`);
 
-        const stations = await this.constructor.getStations(zone.id);
+            const stations = await this.constructor.getStations(zone.id);
 
-        let description = '';
-        for (let i = 0; i < stations.length; i++)
-            description += stations[i].name + '\n';
+            let description = '';
+            for (let i = 0; i < stations.length; i++)
+                description += stations[i].name + '\n';
 
-        const embed = new RichEmbed();
-        embed.setColor(0x00AE86);
-        embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
-        embed.setTitle(`**__${zone.name}:__**`);
-        embed.setURL(zone.url);
-        embed.setDescription(description);
-        embed.setThumbnail(zone.map);
+            const embed = new RichEmbed();
+            embed.setColor(0x00AE86);
+            embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
+            embed.setTitle(`**__${zone.name}:__**`);
+            embed.setURL(zone.url);
+            embed.setDescription(description);
+            embed.setThumbnail(zone.map);
 
-        return await this.send({ embed });
+            return await this.send({ embed });
+        } catch (error) {
+            return this.error(error);
+        }
     }
 
     static getSchedules(url) {
@@ -250,133 +258,138 @@ class Cercanias extends Command {
     }
 
     async run() {
-        switch (this.args._.length) {
-            case 0:
-                return await this.sendZones();
-            case 1:
-                return await this.sendStations();
-        }
-
-        const zone = this.constructor.getZone(this.args._[0]);
-        if (!zone)
-            return await this.send(`${this.args._[0]} no es una zona válida.`);
-
-        const stations = await this.constructor.getStations(zone.id);
-
-        const origin = stations.find(s => s.name.toLowerCase() === this.args._[1].toLowerCase());
-        if (!origin)
-            return await this.send(`${this.args._[1]} no es un origen válido.`);
-
-        const destination = stations.find(s => s.name.toLowerCase() === this.args._[2].toLowerCase());
-        if (!destination)
-            return await this.send(`${this.args._[2]} no es un destino válido.`);
-
-        const addZero = nmb => {
-            if (nmb < 9)
-                return `0${nmb}`;
-
-            return nmb.toString();
-        }
-
-        let start = this.args.inicio || 0;
-
-        const addDays = (date, days) => new Date(date.getTime() + days * 60 * 60 * 24 * 1000);
-
-        let now = new Date();
-        let date = this.args.fecha;
-        if (!date) {
-            date = `${now.getFullYear()}${addZero(now.getMonth())}${addZero(now.getDate())}`;
-
-            const hour = now.getHours();
-            if (start < hour)
-                start = hour;
-
-        } else if (isNaN(date)) {
-
-            if (date === 'mañana') {
-                now = addDays(now, 1);
-
-            } else {
-                const weekDays = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-
-                const index = weekDays.indexOf(date.toLowerCase().replace('é', 'e').replace('á', 'a'));
-                if (index < 0)
-                    return await this.send(`${date} no es un día de la semana válido.`);
-
-                const today = now.getDay();
-                if (today > index)
-                    now = addDays(now, 7 + index - today);
-                else
-                    now = addDays(now, index - today);
+        try {
+            switch (this.args._.length) {
+                case 0:
+                    return await this.sendZones();
+                case 1:
+                    return await this.sendStations();
             }
 
-            date = `${now.getFullYear()}${addZero(now.getMonth())}${addZero(now.getDate())}`;
-        }
+            const zone = this.constructor.getZone(this.args._[0]);
+            if (!zone)
+                return await this.send(`${this.args._[0]} no es una zona válida.`);
 
-        let end = this.args.fin && this.args.fin > start ? this.args.fin : 26;
+            const stations = await this.constructor.getStations(zone.id);
 
-        const url = `http://horarios.renfe.com/cer/hjcer310.jsp?nucleo=${zone.id}&i=s&cp=NO&o=${origin.id}&d=${destination.id}&df=${date}&ho=${start}&hd=${end}&TXTInfo=''`;
+            const origin = stations.find(s => s.name.toLowerCase() === this.args._[1].toLowerCase());
+            if (!origin)
+                return await this.send(`${this.args._[1]} no es un origen válido.`);
 
-        const schedules = await this.constructor.getSchedules(url);
+            const destination = stations.find(s => s.name.toLowerCase() === this.args._[2].toLowerCase());
+            if (!destination)
+                return await this.send(`${this.args._[2]} no es un destino válido.`);
 
-        const format = (text, tab) => {
-            tab -= text.length;
+            const addZero = nmb => {
+                if (nmb < 9)
+                    return `0${nmb}`;
 
-            const pre = Math.floor(tab / 2);
-            for (let i = 0; i < pre; i++)
-                text = " " + text;
+                return nmb.toString();
+            }
 
-            const post = Math.ceil(tab / 2);
-            for (let i = 0; i < post; i++)
-                text += " ";
+            let start = this.args.inicio || 0;
 
-            return text;
-        }
+            const addDays = (date, days) => new Date(date.getTime() + days * 60 * 60 * 24 * 1000);
 
-        const replies = [];
+            let now = new Date();
+            let date = this.args.fecha;
+            if (!date) {
+                date = `${now.getFullYear()}${addZero(now.getMonth())}${addZero(now.getDate())}`;
 
-        let overflow = false;
-        let description = '-----------------------------------------------------------------\n';
-        description += '```fix\n' + ` Línea | Salida | Llegada | Duración ` + '```\n';
-        for (let i = 0; i < schedules.length; i++) {
-            const line = format(schedules[i].line, 7);
-            const start = format(schedules[i].start, 8);
-            const arrive = format(schedules[i].arrive, 9);
-            const time = format(schedules[i].time, 10);
-            const color = i % 2 === 0 ? '```\n' : '```yaml\n';
-            const add = `${color}${line}|${start}|${arrive}|${time}` + '```\n';
+                const hour = now.getHours();
+                if (start < hour)
+                    start = hour;
 
-            if (description.length + add.length > 2048) {
-                const embed = new RichEmbed();
-                embed.setColor(0x00AE86);
-                embed.setDescription(description);
+            } else if (isNaN(date)) {
 
-                if (!overflow) {
-                    embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
-                    embed.setTitle(`**${origin.name} --> ${destination.name}** (${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()})`);
-                    embed.setURL(url);
-                    overflow = true;
+                if (date === 'mañana') {
+                    now = addDays(now, 1);
+
+                } else {
+                    const weekDays = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+                    const index = weekDays.indexOf(date.toLowerCase().replace('é', 'e').replace('á', 'a'));
+                    if (index < 0)
+                        return await this.send(`${date} no es un día de la semana válido.`);
+
+                    const today = now.getDay();
+                    if (today > index)
+                        now = addDays(now, 7 + index - today);
+                    else
+                        now = addDays(now, index - today);
                 }
 
-                replies.push(await this.send({ embed }));
+                date = `${now.getFullYear()}${addZero(now.getMonth())}${addZero(now.getDate())}`;
+            }
 
-                description = add;
-            } else description += add;
+            let end = this.args.fin && this.args.fin > start ? this.args.fin : 26;
+
+            const url = `http://horarios.renfe.com/cer/hjcer310.jsp?nucleo=${zone.id}&i=s&cp=NO&o=${origin.id}&d=${destination.id}&df=${date}&ho=${start}&hd=${end}&TXTInfo=''`;
+
+            const schedules = await this.constructor.getSchedules(url);
+
+            const format = (text, tab) => {
+                tab -= text.length;
+
+                const pre = Math.floor(tab / 2);
+                for (let i = 0; i < pre; i++)
+                    text = " " + text;
+
+                const post = Math.ceil(tab / 2);
+                for (let i = 0; i < post; i++)
+                    text += " ";
+
+                return text;
+            }
+
+            const replies = [];
+
+            let overflow = false;
+            let description = '-----------------------------------------------------------------\n';
+            description += '```fix\n' + ` Línea | Salida | Llegada | Duración ` + '```\n';
+            for (let i = 0; i < schedules.length; i++) {
+                const line = format(schedules[i].line, 7);
+                const start = format(schedules[i].start, 8);
+                const arrive = format(schedules[i].arrive, 9);
+                const time = format(schedules[i].time, 10);
+                const color = i % 2 === 0 ? '```\n' : '```yaml\n';
+                const add = `${color}${line}|${start}|${arrive}|${time}` + '```\n';
+
+                if (description.length + add.length > 2048) {
+                    const embed = new RichEmbed();
+                    embed.setColor(0x00AE86);
+                    embed.setDescription(description);
+
+                    if (!overflow) {
+                        embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
+                        embed.setTitle(`**${origin.name} --> ${destination.name}** (${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()})`);
+                        embed.setURL(url);
+                        overflow = true;
+                    }
+
+                    replies.push(await this.send({ embed }));
+
+                    description = add;
+                } else description += add;
+            }
+
+            const embed = new RichEmbed();
+            embed.setColor(0x00AE86);
+            embed.setDescription(description);
+
+            if (!overflow) {
+                embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
+                embed.setTitle(`**${origin.name} --> ${destination.name}** (${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()})`);
+                embed.setURL(url);
+            }
+
+            replies.push(await this.send({ embed }));
+
+            return replies;
+
+        } catch (error) {
+            return this.error(error);
         }
-
-        const embed = new RichEmbed();
-        embed.setColor(0x00AE86);
-        embed.setDescription(description);
-
-        if (!overflow) {
-            embed.setAuthor("Renfe Cercanias", "https://is5-ssl.mzstatic.com/image/thumb/Purple124/v4/be/8b/b3/be8bb3ba-9d52-48e2-7616-bbc304d4df5c/source/256x256bb.jpg");
-            embed.setTitle(`**${origin.name} --> ${destination.name}** (${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()})`);
-            embed.setURL(url);
-        }
-
-        replies.push(await this.send({ embed }));
-
-        return replies;
     }
 }
 

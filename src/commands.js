@@ -54,7 +54,8 @@ async function procces(message) {
             command,
             args,
             message,
-            error
+            errors: [error],
+            hasErrors: () => true
         };
     }
 }

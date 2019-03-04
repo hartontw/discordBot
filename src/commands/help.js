@@ -7,7 +7,7 @@ class Help extends Command {
 
     static get usage() {
         return `/help
-                /help command`;
+                /help <search>`;
     }
 
     constructor(message, args, commands) {
@@ -15,40 +15,49 @@ class Help extends Command {
         this.commands = commands;
     }
 
+    get wrongFormat() {
+        return false;
+    }
+
     async run() {
-        let commands = this.commands;
+        try {
+            let commands = this.commands;
 
-        if (this.args._[0]) {
-            commands = {};
+            if (this.args._[0]) {
+                commands = {};
 
-            let keys = Object.keys(this.commands);
+                let keys = Object.keys(this.commands);
+                for (const key of keys) {
+                    if (key.startsWith(this.args._[0]))
+                        commands[key] = this.commands[key];
+                }
+
+                keys = Object.keys(commands);
+                if (keys.length === 0)
+                    commands = this.commands;
+            }
+
+            const fields = [];
+
+            const keys = Object.keys(commands);
             for (const key of keys) {
-                if (key.startsWith(this.args._[0]))
-                    commands[key] = this.commands[key];
+                fields.push({
+                    name: '/' + key,
+                    value: commands[key].description
+                });
             }
 
-            keys = Object.keys(commands);
-            if (keys.length === 0)
-                commands = this.commands;
-        }
-
-        const fields = [];
-
-        const keys = Object.keys(commands);
-        for (const key of keys) {
-            fields.push({
-                name: '/' + key,
-                value: commands[key].description
+            return await this.send({
+                embed: {
+                    color: 3447003,
+                    title: "**__List of commands:__**",
+                    fields
+                }
             });
-        }
 
-        return await this.send({
-            embed: {
-                color: 3447003,
-                title: "**__List of commands:__**",
-                fields
-            }
-        });
+        } catch (error) {
+            return this.error(error);
+        }
     }
 }
 

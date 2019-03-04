@@ -73,101 +73,107 @@ class Gist extends Command {
         });
     }
 
-    async send(content, first) {
-        if (this.args.dm)
-            return await this.message.author.send(content);
-        else if (this.args.remains || !first)
-            return await this.message.channel.send(content);
-        else
-            return await this.message.reply(content);
-    }
-
     async sendGist(info) {
-        const url = `${header}${info.username}/${info.id}`;
+        try {
+            const url = `${header}${info.username}/${info.id}`;
 
-        let description = info.description;
-        let fields = [];
-        if (this.args.links) {
-            fields = [{
-                    name: 'Embed',
-                    value: '`<script src="' + url + '.' + info.extension + '"></script>`'
-                },
-                {
-                    name: 'Share',
-                    value: '`' + url + '`'
-                },
-                {
-                    name: 'Clone via HTTPS',
-                    value: '`' + url + '.git`'
-                },
-                {
-                    name: 'Clone via SSH',
-                    value: '`git@gist.github.com:' + info.id + '.git`'
-                }
-            ];
-        } else {
-            const content = await this.constructor.getRaw(`https://gist.githubusercontent.com${info.raw}`);
-            description += '\n```' + info.extension + '\n';
-            const length = 2000 - (description.length + 3);
-            description += content.substring(0, length) + '```';
-        }
+            let description = info.description;
+            let fields = [];
+            if (this.args.links) {
+                fields = [{
+                        name: 'Embed',
+                        value: '`<script src="' + url + '.' + info.extension + '"></script>`'
+                    },
+                    {
+                        name: 'Share',
+                        value: '`' + url + '`'
+                    },
+                    {
+                        name: 'Clone via HTTPS',
+                        value: '`' + url + '.git`'
+                    },
+                    {
+                        name: 'Clone via SSH',
+                        value: '`git@gist.github.com:' + info.id + '.git`'
+                    }
+                ];
+            } else {
+                const content = await this.constructor.getRaw(`https://gist.githubusercontent.com${info.raw}`);
+                description += '\n```' + info.extension + '\n';
+                const length = 2000 - (description.length + 3);
+                description += content.substring(0, length) + '```';
+            }
 
-        const reply = {
-            embed: {
-                color: 3447003,
-                title: info.filename,
-                url,
-                description,
-                fields,
-                timestamp: info.date,
-                footer: {
-                    icon_url: info.avatar,
-                    text: info.username
+            const reply = {
+                embed: {
+                    color: 3447003,
+                    title: info.filename,
+                    url,
+                    description,
+                    fields,
+                    timestamp: info.date,
+                    footer: {
+                        icon_url: info.avatar,
+                        text: info.username
+                    }
                 }
             }
-        }
 
-        return await this.send(reply, true);
+            return await this.send(reply, true);
+
+        } catch (error) {
+            return this.error(error);
+        }
     }
 
     async sendFile(info) {
-        const content = await this.constructor.getRaw(`https://gist.githubusercontent.com${info.raw}`);
+        try {
+            const content = await this.constructor.getRaw(`https://gist.githubusercontent.com${info.raw}`);
 
-        const maxLength = 2000 - info.extension.length - 7; //6` + 1\n
+            const maxLength = 2000 - info.extension.length - 7; //6` + 1\n
 
-        let block = 0;
-        let i = 0;
-        while (i < content.length - maxLength) {
+            let block = 0;
+            let i = 0;
+            while (i < content.length - maxLength) {
+
+                block = content.substring(i, i + maxLength);
+
+                let l = block.lastIndexOf('\n');
+                if (i >= 0) {
+                    block = content.substring(i, i + l);
+                    i += l;
+                } else i += maxLength;
+
+                const text = '```' + info.extension + '\n' + block + '```';
+                await this.send(text);
+            }
 
             block = content.substring(i, i + maxLength);
-
-            let l = block.lastIndexOf('\n');
-            if (i >= 0) {
-                block = content.substring(i, i + l);
-                i += l;
-            } else i += maxLength;
-
             const text = '```' + info.extension + '\n' + block + '```';
-            await this.send(text);
-        }
+            return await this.send(text);
 
-        block = content.substring(i, i + maxLength);
-        const text = '```' + info.extension + '\n' + block + '```';
-        return await this.send(text);
+        } catch (error) {
+            return this.error(error);
+        }
     }
 
     async run() {
-        let id = this.args._[0];
+        try {
+            let id = this.args._[0];
 
-        if (this.args._.length > 1)
-            id = await this.constructor.searchGist(this.args._[0], this.args._[1]);
+            if (this.args._.length > 1)
+                id = await this.constructor.searchGist(this.args._[0], this.args._[1]);
 
-        const info = await this.constructor.getInfo(id);
+            const info = await this.constructor.getInfo(id);
 
-        if (this.args.raw)
-            return await this.sendFile(info);
-        else
-            return await this.sendGist(info);
+            if (this.args.raw)
+                return await this.sendFile(info);
+            else
+                return await this.sendGist(info);
+
+        } catch (error) {
+            return this.error(error);
+        }
     }
 }
 

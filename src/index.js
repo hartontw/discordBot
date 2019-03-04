@@ -10,8 +10,10 @@ client.on('ready', () => {
 
 client.on('message', async message => {
     const reply = await commands(message);
-    if (reply && reply.error) {
-        console.log(error.message);
+    if (reply && reply.hasErrors()) {
+        console.log("ERRORES:");
+        for (const error of reply.errors)
+            console.log(error.message);
     }
 });
 

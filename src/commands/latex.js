@@ -43,9 +43,14 @@ class Latex extends Command {
     }
 
     async run() {
-        const buffer = await this.constructor.getBuffer(this.args._, this.args.color, this.args.scale);
-        const attachment = new Attachment(buffer);
-        return await this.send(attachment);
+        try {
+            const buffer = await this.constructor.getBuffer(this.args._, this.args.color, this.args.scale);
+            const attachment = new Attachment(buffer);
+            return await this.send(attachment);
+
+        } catch (error) {
+            return this.error(error);
+        }
     }
 }
 

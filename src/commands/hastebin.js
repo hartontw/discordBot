@@ -56,35 +56,31 @@ class Hastebin extends Command {
 
     static getLanguage(code, content) {
         const ext = path.extname(code);
-        if (ext)
+        if (ext && ext.length > 0)
             return ext.substring(1);
 
         return highlight.highlightAuto(content, languageSubset).language;
     }
 
-    async send(content, first) {
-        if (this.args.dm)
-            return await this.message.author.send(content);
-        else if (this.args.remains || !first)
-            return await this.message.channel.send(content);
-        else
-            return await this.message.reply(content);
-    }
-
     async run() {
-        const code = this.args._[0];
+        try {
+            const code = this.args._[0];
 
-        const content = await this.constructor.getContent(code);
-        const language = this.constructor.getLanguage(code, content);
+            const content = await this.constructor.getContent(code);
+            const language = this.constructor.getLanguage(code, content);
 
-        const messages = [];
+            const messages = [];
 
-        const blocks = codeMessage(content, language, this.message.author.username);
-        for (const block of blocks) {
-            messages.push(await this.send(block, messages.length === 0));
+            const blocks = codeMessage(content, language, this.message.author.username);
+            for (const block of blocks) {
+                messages.push(await this.send(block, messages.length === 0));
+            }
+
+            return messages;
+
+        } catch (error) {
+            return this.error(error);
         }
-
-        return messages;
     }
 }
 
