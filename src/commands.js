@@ -5,6 +5,7 @@ const Latex = require('./commands/latex');
 const Pastebin = require('./commands/pastebin');
 const Hastebin = require('./commands/hastebin');
 const Gist = require('./commands/gist');
+const CodePen = require('./commands/codepen');
 const Dice = require('./commands/dice');
 const Cercanias = require('./commands/cercanias');
 const Random = require('./commands/random');
@@ -15,6 +16,7 @@ const commands = {
     pastebin: Pastebin,
     hastebin: Hastebin,
     gist: Gist,
+    codepen: CodePen,
     dice: Dice,
     cercanias: Cercanias,
     random: Random,
