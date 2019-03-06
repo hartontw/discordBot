@@ -1,3 +1,5 @@
 node_modules/
 
-/src/keys.js
+/src/auth.json
+
+discordBot.log

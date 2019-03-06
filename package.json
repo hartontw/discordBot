@@ -26,6 +26,9 @@
         "mathjax-node": "^2.1.1",
         "mathjax-node-svg2png": "^2.0.0",
         "minimist": "^1.2.0",
+        "mongoose": "^5.4.17",
+        "winston": "^3.2.1",
+        "winston-mongodb": "^4.0.3",
         "xml-js": "^1.6.11"
     }
 }

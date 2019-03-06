@@ -22,7 +22,7 @@ const commands = {
     random: Random,
 }
 
-async function procces(message) {
+async function process(message) {
     let command;
     let args = [];
 
@@ -62,4 +62,4 @@ async function procces(message) {
     }
 }
 
-module.exports = procces;
+module.exports = process;
